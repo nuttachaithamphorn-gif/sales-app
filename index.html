@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Sales App Demo</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 400px;
+      margin: 50px auto;
+      text-align: center;
+    }
+    input, button {
+      margin: 8px;
+      padding: 8px;
+      width: 90%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h2>ระบบบันทึกยอดขาย</h2>
+  <form id="salesForm">
+    <input type="text" id="seller" placeholder="ชื่อผู้ขาย" required><br>
+    <input type="text" id="product" placeholder="สินค้า" required><br>
+    <input type="number" id="price" placeholder="ราคา" required><br>
+    <button type="submit">บันทึก</button>
+  </form>
+
+  <p id="result"></p>
+
+  <script>
+    // 👉 เปลี่ยนลิงก์นี้เป็น Web App URL ของคุณเอง
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsCD87GOQUUAavAnXLSmVm7D83P2lqDenSEGv5kqD0z2Sb8bdxU0kEDxkL4w10_c51YQ/exec";
+
+    document.getElementById("salesForm").addEventListener("submit", function(e){
+      e.preventDefault();
+
+      const data = {
+        seller: document.getElementById("seller").value,
+        product: document.getElementById("product").value,
+        price: document.getElementById("price").value
+      };
+
+      fetch(SCRIPT_URL + "?path=submitSales", {
+        method: "POST",
+        body: JSON.stringify(data)
+      })
+      .then(res => res.json())
+      .then(response => {
+        document.getElementById("result").innerText = "✅ " + response.result;
+      })
+      .catch(err => {
+        document.getElementById("result").innerText = "❌ เกิดข้อผิดพลาด";
+        console.error(err);
+      });
+    });
+  </script>
+</body>
+</html>
