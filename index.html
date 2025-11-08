@@ -1,76 +1,1097 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SaleApp</title>
-<style>
-body { font-family: sans-serif; margin: 20px; }
-input, button { margin: 4px; padding: 6px; }
-#app { display: none; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sales App (Lao/Thai)</title>
+  <style>
+    :root{
+      --bg:#f5f8fb;
+      --card:#fff; --muted:#6b7280; --primary:#2563eb; --success:#16a34a; --danger:#dc2626;
+      --radius:12px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial; background:var(--bg); color:#111;}
+    .app{max-width:1100px;margin:24px auto;padding:16px;}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 6px 18px rgba(15,23,42,0.06);padding:16px;margin-bottom:16px;}
+    header.appbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin-bottom:12px;}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#60a5fa,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;}
+    nav.tabs{display:flex;gap:8px}
+    nav.tabs button{background:transparent;border:none;padding:8px 12px;border-radius:10px;cursor:pointer;color:var(--muted)}
+    nav.tabs button.active{background:#eef2ff;color:var(--primary);font-weight:600}
+    .right-controls{display:flex;gap:8px;align-items:center}
+    .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600;}
+    .btn.primary{background:var(--primary);color:white}
+    .btn.success{background:var(--success);color:white}
+    .btn.ghost{background:transparent;border:1px solid #e6e9ef}
+    .btn.danger{background:var(--danger);color:white}
+    .center {display:flex;justify-content:center;align-items:center;}
+    /* layout */
+    .grid{display:grid;gap:12px}
+    .grid.cols-2{grid-template-columns:1fr 1fr}
+    .grid.cols-4{grid-template-columns:repeat(4, 1fr)}
+    label{font-size:14px;color:var(--muted);display:block;margin-bottom:6px;}
+    input[type="text"], input[type="password"], input[type="number"], select {
+     width:100%;padding:10px;border-radius:10px;border:1px solid #e6e9ef;background:#fbfdff;font-size:15px;
+    }
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:8px;border-bottom:1px solid #f1f5f9;text-align:left}
+    th{color:var(--muted);font-weight:600}
+    .scroll-box{max-height:320px;overflow:auto}
+    .muted{color:var(--muted);font-size:13px}
+    .small{font-size:13px;color:var(--muted)}
+    .positive{color:var(--success);font-weight:600}
+    .negative{color:var(--danger);font-weight:600}
+    .badge{display:inline-block;background:#eef2ff;color:var(--primary);padding:6px 10px;border-radius:999px;font-weight:600}
+    /* responsive */
+    @media (max-width:800px){
+      .grid.cols-2{grid-template-columns:1fr}
+      .grid.cols-4{grid-template-columns:1fr 1fr}
+      header.appbar{flex-direction:column;align-items:flex-start;gap:8px}
+      .right-controls{width:100%;justify-content:space-between}
+    }
+    /* small helpers */
+    .row{display:flex;gap:8px;align-items:center}
+    .flex{display:flex;gap:8px;align-items:center}
+    .spacer{flex:1}
+    .link{color:var(--primary);cursor:pointer;text-decoration:underline}
+    .center-vert{display:flex;align-items:center}
+    .nowrap{white-space:nowrap}
+    .error{color:var(--danger);font-weight:600}
+    .ok{color:var(--success);font-weight:600}
+    .footer{margin-top:8px;font-size:13px;color:var(--muted);text-align:center}
+    
+    /* MODAL (for custom popups) */
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:999;}
+    .modal{background:white;padding:20px;border-radius:12px;max-width:460px;width:92%;box-shadow:0 10px 25px rgba(0,0,0,0.1);}
+    .modal-title{font-size:18px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+    .modal-content{font-size:15px;color:#333;margin-bottom:20px;max-height:300px;overflow-y:auto;}
+    .modal-content .summary-item{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f1f5f9;}
+    .modal-content .summary-item .label{color:var(--muted)}
+    .modal-buttons{display:flex;gap:8px;justify-content:flex-end;}
+  </style>
 </head>
 <body>
+  <div class="app">
+    <header class="appbar card" id="header" style="display:none">
+      <div class="brand">
+        <div class="logo">SA</div>
+        <div>
+          <div style="font-weight:700">Sales App</div>
+           <div class="small" id="currentUserDisplay"></div>
+        </div>
+      </div>
+      <div class="right-controls">
+        <nav class="tabs" id="navTabs">
+          <button data-page="home" class="active">Home</button>
+          <button data-page="sale">Sale</button>
+          <button data-page="summary">Summary</button>
+        </nav>
+        <div class="spacer"></div>
+        <div id="adminControls" style="display:none" class="flex">
+          <button class="btn ghost" id="btnUserMgmt">Manage Users</button>
+          <button class="btn ghost" id="btnClear">Clear</button>
+        </div>
+        <div class="spacer" style="flex:0.3"></div>
+        <div class="flex">
+          <button id="btnLogout" class="btn ghost">Logout</button>
+        </div>
+      </div>
+    </header>
 
-<h2>SaleApp Login</h2>
-<div id="login">
-  <input id="user" placeholder="Username">
-  <input id="pass" placeholder="Password" type="password">
-  <button onclick="login()">Login</button>
-  <div id="msg"></div>
-</div>
+    <div id="content">
 
-<div id="app">
-  <h3>บันทึกยอดขาย</h3>
-  <input id="customer" placeholder="Customer">
-  <input id="amount" placeholder="Amount">
-  <button onclick="submitSale()">Submit</button>
-  <pre id="output"></pre>
-</div>
+      <section id="pageLogin" class="card" style="max-width:540px;margin:6px auto;">
+        <h3>Login</h3>
+        <div class="small muted">กรุณาเข้าสู่ระบบ</div>
+        <div style="margin-top:12px" class="grid">
+          <div>
+            <label>Username</label>
+            <input type="text" id="loginUsername" autocomplete="username">
+          </div>
+          <div>
+            <label>Password</label>
+            <input type="password" id="loginPassword" autocomplete="current-password">
+          </div>
+          <div class="row" style="justify-content:center">
+            <button id="btnLogin" class="btn primary">Login</button>
+            <button id="btnCloseApp" class="btn">Close</button>
+          </div>
+          <div id="loginMsg" class="muted center" style="margin-top:8px;"></div>
+         </div>
+      </section>
 
-<script>
-const API_BASE = "https://script.google.com/macros/s/AKfycbx-cbSMcIknxPuT5eVKkjePqVQHBnzPOYtgigozgdIKr8N4jAGjn2Cs90o4GYXVyd01Zg/exec";
-let token = null;
+      <section id="pageHome" class="card" style="display:none">
+        <div id="homeUserView" style="display:none">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:18px;font-weight:700" id="homeTitle">My Sales</div>
+              <div class="small muted">ดูยอดขายและสรุป</div>
+            </div>
+            <div class="row">
+              <label style="margin:0 8px 0 0">แสดง:</label>
+              <select id="homeSheetSelect" style="width:160px;padding:8px;border-radius:8px;border:1px solid #e6e9ef">
+                <option value="salelao">salelao</option>
+                <option value="saleThai">saleThai</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:12px" class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-weight:700">ลูกค้า (Customers)</div>
+              <div class="muted">รวม</div>
+            </div>
+            <div class="scroll-box card" style="padding:0">
+              <table id="homeTableUser">
+                <thead><tr><th>Customer</th><th style="text-align:right">Total</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+              <div class="small muted">เลื่อนดูข้อมูลทั้งหมดได้</div>
+              <div style="font-weight:700">Total: <span id="homeTotalUser">0</span></div>
+            </div>
+          </div>
+        </div>
+        
+        <div id="homeAdminView" style="display:none">
+          <div style="font-size:18px;font-weight:700">Admin Dashboard</div>
+          <div class="small muted">สรุปยอดขายรวมทั้งหมด แยกตามชีท</div>
+          
+          <div class="grid cols-2" style="margin-top:12px">
+            <div class="card">
+              <div style="font-weight:700;margin-bottom:8px">salelao</div>
+              <div class="scroll-box card" style="padding:0; max-height: 280px;">
+                <table id="homeTableAdminLao">
+                  <thead><tr><th>User</th><th style="text-align:right">Total</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+                <div class="small muted">เลื่อนดูข้อมูลทั้งหมดได้</div>
+                <div style="font-weight:700">Total (Lao): <span id="homeTotalAdminLao">0</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <div style="font-weight:700;margin-bottom:8px">saleThai</div>
+              <div class="scroll-box card" style="padding:0; max-height: 280px;">
+                <table id="homeTableAdminThai">
+                  <thead><tr><th>User</th><th style="text-align:right">Total</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+                <div class="small muted">เลื่อนดูข้อมูลทั้งหมดได้</div>
+                <div style="font-weight:700">Total (Thai): <span id="homeTotalAdminThai">0</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-async function apiPost(data) {
-  const params = new URLSearchParams();
-  for (const k in data) {
-    const v = data[k];
-    params.append(k, typeof v === "object" ? JSON.stringify(v) : v);
-  }
-  const res = await fetch(API_BASE, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params
-  });
-  return await res.json();
-}
+      </section>
 
-async function login() {
-  const username = user.value;
-  const password = pass.value;
-  const res = await apiPost({ action: "login", username, password });
-  msg.textContent = res.ok ? "เข้าสู่ระบบสำเร็จ" : res.message;
-  if (res.ok) {
-    token = res.token;
-    login.style.display = "none";
-    app.style.display = "block";
-  }
-}
+      <section id="pageSale" class="card" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:700">Sale Entry</div>
+            <div class="small muted">เลือกแท็ก Lao หรือ Thai และกรอกข้อมูล</div>
+          </div>
+          <div class="row">
+             <button id="backToHomeFromSale" class="btn ghost" title="Back to Home" style="padding: 6px 10px;">←</button>
+            <div id="statusBadge" class="badge">Ready</div>
+           </div>
+        </div>
 
-async function submitSale() {
-  const customerName = customer.value.trim();
-  const amountNum = Number(amount.value);
-  const items = [{ customer: customerName, number: 1, amount: amountNum }];
-  const res = await apiPost({
-    action: "submitSales",
-    sheet: "saleThai",
-    user: "testuser",
-    rows: items
-  });
-  output.textContent = JSON.stringify(res, null, 2);
-}
-</script>
+        <div style="margin-top:12px">
+          <div class="row" style="justify-content:center">
+            <button id="tagLao" class="btn ghost">LAO</button>
+            <button id="tagThai" class="btn primary">THAI</button>
+          </div>
+          
+          <div style="margin-top:12px; font-weight: 600; padding: 0 4px;">
+            <div class="row">
+              <div style="flex:1">Customer</div>
+              <div style="width:110px">Number (0-999)</div>
+              <div style="width:130px">Amount</div>
+              <div style="width:40px"></div>
+            </div>
+          </div>
 
+          <div id="saleRows" style="margin-top:6px"></div>
+
+          <div style="margin-top:12px" class="row">
+            <button id="addSaleRow" class="btn">+ Add Row</button>
+            <div class="spacer"></div>
+            <button id="btnSaleClear" class="btn ghost">Clear</button>
+            <button id="btnSaleSubmit" class="btn primary">Submit</button>
+            <button id="btnStopSale" class="btn danger" style="display:none;margin-left:8px">STOP</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="pageSummary" class="card" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:700">Summary & Reports</div>
+            <div class="small muted">สรุปยอดตามเงื่อนไข</div>
+          </div>
+          <div>
+            <label class="small muted">เลือกแหล่งข้อมูล</label>
+             <select id="summarySheetSelect" style="width:160px;padding:8px;border-radius:8px;border:1px solid #e6e9ef">
+              <option value="salelao">salelao</option>
+              <option value="saleThai">saleThai</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="grid">
+          <div id="adminSummary" style="display:none">
+            <div class="card">
+              <div style="font-weight:700;margin-bottom:8px">Table 1 — สรุปตามตัวเลข (Number)</div>
+              <div class="scroll-box" style="max-height:200px">
+                <table id="summaryTable1"><thead><tr><th>Number</th><th style="text-align:right">TotalAmount</th></tr></thead><tbody></tbody></table>
+              </div>
+           </div>
+            <div class="card">
+              <div style="font-weight:700;margin-bottom:8px">Table 2 — สรุปตาม User (หักส่วนลด)</div>
+              <div class="scroll-box" style="max-height:240px">
+                <table id="summaryTable2">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th style="text-align:right">Sum</th>
+                      <th style="text-align:right">Discount %</th>
+                      <th style="text-align:right">Discount Amt</th>
+                      <th style="text-align:right">After Discount</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+           </div>
+
+          <div id="userSummary" style="display:none">
+            <div class="card">
+              <div style="font-weight:700;margin-bottom:6px">salelao — Your customers</div>
+              <div class="scroll-box" style="max-height:160px">
+                 <table id="userTableLao"><thead><tr><th>Customer</th><th style="text-align:right">Total</th></tr></thead><tbody></tbody></table>
+              </div>
+              <div style="margin-top:8px;display:flex;justify-content:space-between"><div class="small muted">Sum</div><div id="userTotalLao" style="font-weight:700">0</div></div>
+            </div>
+            <div class="card">
+              <div style="font-weight:700;margin-bottom:6px">saleThai — Your customers</div>
+               <div class="scroll-box" style="max-height:160px">
+                <table id="userTableThai"><thead><tr><th>Customer</th><th style="text-align:right">Total</th></tr></thead><tbody></tbody></table>
+              </div>
+              <div style="margin-top:8px;display:flex;justify-content:space-between"><div class="small muted">Sum</div><div id="userTotalThai" style="font-weight:700">0</div></div>
+            </div>
+            <div class="card">
+              <div style="font-weight:700">Summary (after discount)</div>
+               <div style="display:flex;justify-content:space-between;margin-top:8px"><div class="small muted">Total (raw)</div><div id="userGrandRaw">0</div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:8px"><div class="small muted">Discount (<span id="userDiscountPercent">0</span>%)</div><div id="userDiscountAmount" class="negative">0</div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:8px; font-size: 16px;"><div class="small muted">ยอดที่ต้องชำระ (After discount)</div><div id="userGrandAfter" style="font-weight:700">0</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="pageUserMgmt" class="card" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:700">User Management</div>
+            <div class="small muted">เพิ่ม ลบ แก้ไขสมาชิก (admin only)</div>
+          </div>
+          <div>
+            <button id="backToHomeFromUser" class="btn ghost">← Back</button>
+           </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="margin-bottom:8px"><input type="text" id="userSearch" placeholder="ค้นหา username หรือ displayName" style="padding:8px;border-radius:8px;border:1px solid #e6e9ef;width:100%"></div>
+          <div class="scroll-box card" style="padding:0;max-height:280px">
+            <table id="userTable"><thead><tr><th>username</th><th>password</th><th>displayName</th><th>role</th><th>discount%</th></tr></thead><tbody></tbody></table>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:16px;flex-direction:column">
+            <div>
+              <div style="font-weight:700">Add user</div>
+              <div class="grid cols-4" style="margin-top: 8px;">
+                <input type="text" id="new_username" placeholder="username">
+                <input type="text" id="new_password" placeholder="password">
+                <input type="text" id="new_displayName" placeholder="displayName">
+                <input type="number" id="new_discount" placeholder="discountPercent" min="0" max="100" value="0">
+              </div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button id="btnAddUser" class="btn primary">Add</button>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700">Delete user</div>
+              <div class="row" style="margin-top: 8px;">
+                <input type="text" id="delete_username" placeholder="กรอก username ที่ต้องการลบ" style="flex:1">
+                <button id="btnDeleteUser" class="btn danger">Delete</button>
+              </div>
+              <div id="deleteUserMsg" class="small muted" style="margin-top:4px;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      
+      <section id="pageClear" class="card" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:700">Clear Database</div>
+            <div class="small muted">ล้างข้อมูลจากชีท (admin only)</div>
+          </div>
+          <div>
+            <button id="backToHomeFromClear" class="btn ghost">← Back</button>
+           </div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:12px;flex-direction:column">
+          <div class="row"><button id="clearSalelao" class="btn danger">Clear salelao</button><div class="spacer"></div><div class="muted">ลบข้อมูลทั้งหมดในชีท salelao (ยกเว้นหัวตาราง)</div></div>
+          <div class="row"><button id="clearSaleThai" class="btn danger">Clear saleThai</button><div class="spacer"></div><div class="muted">ลบข้อมูลทั้งหมดในชีท saleThai (ยกเว้นหัวตาราง)</div></div>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="footer muted center">Built for demo — connected to Google Sheets</div>
+  </div>
+
+  <div id="modalRoot" style="display:none"></div>
+
+   <script>
+    /***********************
+     * Config: set your Web App URL here (must include /exec)
+     ***********************/
+    // !! IMPORTANT !!
+    // URL นี้ถูกอัปเดตให้ตรงกับที่คุณส่งมาล่าสุดแล้ว
+    const API_BASE = "https://script.google.com/macros/s/AKfycbw-ip5y10q8VJJQy7RwLYjjQaKUP8VDz5q1UU4tpbFhYXc8nHQER_DpZgvw1UOBLPE3ig/exec";
+
+    /***********************
+     * Utilities / API
+     ***********************/
+    const $ = (id) => document.getElementById(id);
+    async function apiGet(params) {
+      // params: object with action and query params
+      const url = new URL(API_BASE);
+      Object.keys(params).forEach(k => { if (params[k] !== undefined && params[k] !== null) url.searchParams.append(k, params[k]); });
+      const res = await fetch(url.toString(), { redirect: "follow" });
+      return await res.json();
+    }
+    async function apiPost(body) {
+      const res = await fetch(API_BASE, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(body),
+        redirect: "follow"
+      });
+      return await res.json();
+    }
+    
+    /***********************
+     * Modal (NEW)
+     * For custom popups
+     ***********************/
+    // showModal('Title', 'Content HTML', [{ text: 'OK', class: 'primary', action: () => {} }, { text: 'Cancel', class: 'ghost' }])
+    function showModal(title, contentHtml, buttons = []) {
+      const modalRoot = $("modalRoot");
+      modalRoot.innerHTML = `
+        <div class="modal-bg">
+          <div class="modal">
+            <div class="modal-title">${title}</div>
+            <div class="modal-content">${contentHtml}</div>
+            <div class="modal-buttons"></div>
+          </div>
+        </div>
+      `;
+      
+      const modalButtons = modalRoot.querySelector(".modal-buttons");
+      const closeModal = () => { modalRoot.style.display = "none"; modalRoot.innerHTML = ""; };
+      
+      if (!buttons || buttons.length === 0) {
+        buttons = [{ text: 'ตกลง', class: 'primary' }];
+      }
+      
+      buttons.forEach(btnInfo => {
+        const btn = document.createElement("button");
+        btn.textContent = btnInfo.text;
+        btn.className = `btn ${btnInfo.class || 'ghost'}`;
+        btn.addEventListener("click", () => {
+          if (btnInfo.action) btnInfo.action();
+          closeModal();
+        });
+        modalButtons.appendChild(btn);
+      });
+      
+      modalRoot.style.display = "flex";
+      // Close on bg click
+      modalRoot.querySelector(".modal-bg").addEventListener("click", (e) => {
+        if (e.target === e.currentTarget) closeModal();
+      });
+    }
+
+    /***********************
+     * Session & state
+     ***********************/
+    let state = { token: localStorage.getItem("sa_token") || null, user: JSON.parse(localStorage.getItem("sa_user") || "null") || null, currentPage: "login", currentTag: "thai" };
+    function saveSession(token, user) {
+      state.token = token;
+      state.user = user;
+      localStorage.setItem("sa_token", token);
+      localStorage.setItem("sa_user", JSON.stringify(user));
+    }
+    function clearSession() {
+      state.token = null; state.user = null;
+      localStorage.removeItem("sa_token"); localStorage.removeItem("sa_user");
+    }
+
+    /***********************
+     * Page management
+     ***********************/
+    const pages = {
+      login: $("pageLogin"),
+      home: $("pageHome"),
+      sale: $("pageSale"),
+      summary: $("pageSummary"),
+      usermgmt: $("pageUserMgmt"),
+      clear: $("pageClear")
+    };
+    function showPage(p) {
+      Object.values(pages).forEach(el => el.style.display = "none");
+      // header show/hide
+      if (p === "login") {
+        $("header").style.display = "none";
+      } else {
+        $("header").style.display = "flex";
+        // highlight tab
+        [...document.querySelectorAll("#navTabs button")].forEach(b=>b.classList.remove("active"));
+        const tab = document.querySelector(`#navTabs button[data-page="${p}"]`);
+        if(tab) tab.classList.add("active");
+      }
+      // show page
+      if (p === "usermgmt") p = "usermgmt";
+      // mapping - element id is pageUserMgmt
+      if (p === "usermgmt" || p === "userMgmt") pages.usermgmt.style.display = "block";
+      if (p === "clear") pages.clear.style.display = "block";
+      if (p === "home") pages.home.style.display = "block";
+      if (p === "sale") pages.sale.style.display = "block";
+      if (p === "summary") pages.summary.style.display = "block";
+      if (p === "login") pages.login.style.display = "block";
+      state.currentPage = p;
+    }
+
+    /***********************
+     * Init
+     ***********************/
+    async function init() {
+      bindUI();
+      // check existing token
+      if (state.token) {
+        try {
+          // We must fetch the user data on init to ensure role/discount is current
+          const r = await apiPost({ action: "checkSession", token: state.token });
+          if (r && r.ok) {
+            // Token is valid, now fetch user data
+            const users = await apiPost({ action: "getUsers", authToken: state.token }).catch(()=>null);
+            if (users && Array.isArray(users)) {
+                const u = users.find(x => x.username === r.username);
+                if (u) {
+                  state.user = { username: u.username, displayName: u.displayName, role: u.role, discountPercent: Number(u.discountPercent||0) };
+                  saveSession(state.token, state.user);
+                  setupAfterLogin();
+                  await gotoPage("home");
+                  return;
+                }
+            }
+            // If user not found (e.g., deleted), or getUsers fails, log out
+            clearSession();
+            showPage("login");
+            
+          } else {
+            clearSession();
+            showPage("login");
+            return;
+          }
+        } catch(err) {
+          console.error(err);
+          clearSession();
+          showPage("login");
+          return;
+        }
+      }
+      showPage("login");
+    }
+
+    /***********************
+     * UI bindings
+     ***********************/
+    function bindUI() {
+      // login
+      $("btnLogin").addEventListener("click", doLogin);
+      $("loginPassword").addEventListener("keydown", (e) => { if(e.key === "Enter") doLogin(); });
+      $("loginUsername").addEventListener("keydown", (e) => { if(e.key === "Enter") doLogin(); });
+
+      $("btnCloseApp").addEventListener("click", ()=> {
+        // clear form
+        $("loginUsername").value = ""; $("loginPassword").value = ""; $("loginMsg").textContent = "";
+      });
+      // header nav
+      [...document.querySelectorAll("#navTabs button")].forEach(b => {
+        b.addEventListener("click", async (ev)=>{
+          const p = ev.target.getAttribute("data-page");
+          await gotoPage(p);
+        });
+      });
+      $("btnLogout").addEventListener("click", ()=> {
+        showModal("Logout", "คุณต้องการออกจากระบบใช่หรือไม่?", [
+          { text: "ยกเลิก", class: "ghost" },
+          { text: "ออกจากระบบ", class: "danger", action: () => { clearSession(); location.reload(); } }
+        ]);
+      });
+      // Home (User) sheet select
+      $("homeSheetSelect").addEventListener("change", () => loadHome());
+      // Sale tag buttons
+      $("tagLao").addEventListener("click", ()=> setTag("lao"));
+      $("tagThai").addEventListener("click", ()=> setTag("thai"));
+      $("addSaleRow").addEventListener("click", addSaleRow);
+      $("btnSaleClear").addEventListener("click", ()=> {
+        showModal("Clear Form", "คุณต้องการล้างข้อมูลในฟอร์มนี้ทั้งหมดใช่หรือไม่?", [
+          { text: "ยกเลิก", class: "ghost" },
+          { text: "ล้างฟอร์ม", class: "danger", action: () => renderSaleRows([]) }
+        ]);
+      });
+      $("btnSaleSubmit").addEventListener("click", submitSale);
+      $("btnStopSale").addEventListener("click", stopSaleConfirm);
+      $("backToHomeFromSale").addEventListener("click", () => gotoPage("home")); // Back button
+
+      // summary
+      $("summarySheetSelect").addEventListener("change", loadSummary);
+      // user management
+      $("userSearch").addEventListener("input", renderUserTableFiltered);
+      $("btnAddUser").addEventListener("click", addUser);
+      $("btnDeleteUser").addEventListener("click", deleteUser);
+      $("backToHomeFromUser").addEventListener("click", ()=> gotoPage("home"));
+      // clear page
+      $("clearSalelao").addEventListener("click", ()=> clearSheetConfirm("salelao"));
+      $("clearSaleThai").addEventListener("click", ()=> clearSheetConfirm("saleThai"));
+      $("backToHomeFromClear").addEventListener("click", ()=> gotoPage("home"));
+      // admin buttons
+      $("btnUserMgmt").addEventListener("click", ()=> gotoPage("usermgmt"));
+      $("btnClear").addEventListener("click", ()=> gotoPage("clear"));
+    }
+    
+    async function doLogin() {
+        const u = $("loginUsername").value.trim();
+        const p = $("loginPassword").value;
+        const msg = $("loginMsg");
+        msg.textContent = "";
+        if (!u || !p) { msg.className="error"; msg.textContent = "กรุณากรอก username และ password"; return; }
+        $("btnLogin").disabled = true; $("btnLogin").textContent = "Signing in...";
+        try {
+          const res = await apiPost({ action: "login", username: u, password: p });
+          if (res && res.ok) {
+            saveSession(res.token, res.user);
+            setupAfterLogin();
+            await gotoPage("home");
+          } else {
+            // Use Modal as per requirement
+            showModal("❗ Login ไม่สำเร็จ", "Username หรือ Password ไม่ถูกต้อง", [
+              { text: "ตกลง", class: "primary", action: () => {
+                $("loginPassword").value = "";
+                $("loginUsername").value = "";
+                $("loginUsername").focus();
+              }}
+            ]);
+            msg.className = "error"; msg.textContent = "❗ username หรือ password ไม่ถูกต้อง";
+          }
+        } catch (err) {
+          console.error(err);
+          msg.className = "error"; msg.textContent = "เกิดข้อผิดพลาดในการเชื่อมต่อ";
+        } finally {
+          $("btnLogin").disabled = false; $("btnLogin").textContent = "Login";
+        }
+    }
+
+    function setupAfterLogin() {
+      // show header & populate user info
+      $("header").style.display = "flex";
+      $("currentUserDisplay").textContent = `${state.user.displayName || state.user.username} • ${state.user.role || 'user'}`;
+      // admin controls
+      if (state.user.role === "admin") { 
+        $("adminControls").style.display = "flex";
+        $("btnStopSale").style.display = "inline-block";
+        // Show Admin Home, hide User Home
+        $("homeAdminView").style.display = "block";
+        $("homeUserView").style.display = "none";
+      }
+      else { 
+        $("adminControls").style.display = "none"; 
+        $("btnStopSale").style.display = "none";
+        // Show User Home, hide Admin Home
+        $("homeAdminView").style.display = "none";
+        $("homeUserView").style.display = "block";
+      }
+      // set up default tag
+      setTag(state.currentTag || "thai");
+    }
+
+    async function gotoPage(p) {
+      // ensure logged in for non-login pages
+      if (p !== "login" && !state.token) { showPage("login"); return; }
+      // page-specific loaders
+      if (p === "home") { await loadHome(); }
+      if (p === "sale") { await loadStatusAndRenderSale(); }
+      if (p === "summary") { await loadSummary(); }
+      if (p === "usermgmt") { await loadUsers(); }
+      showPage(p);
+    }
+
+    /***********************
+     * Home: load data (REVISED)
+     ***********************/
+    async function loadHome() {
+      if (state.user.role === "admin") {
+        // admin: fetch both tables
+        const res = await apiPost({ action: "getHomeAdmin", authToken: state.token });
+        if (res && res.ok) {
+          renderHomeAdmin(res.salelao || {data:[], totalAll:0}, res.saleThai || {data:[], totalAll:0});
+        } else {
+          renderHomeAdmin({data:[], totalAll:0}, {data:[], totalAll:0});
+        }
+      } else {
+        // user: fetch selected table
+        const sheet = $("homeSheetSelect").value;
+        if (!sheet) return;
+        const res = await apiGet({ action: "getData", sheet, username: state.user.username, role: "user" });
+        if (res && res.ok) {
+          renderHomeUser(res.data || [], res.totalUser || 0, sheet);
+        } else {
+          renderHomeUser([], 0, sheet);
+        }
+      }
+    }
+
+    function renderHomeUser(data, total, sheet) {
+      const tbody = $("homeTableUser").querySelector("tbody");
+      tbody.innerHTML = "";
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;color:var(--muted)">- ไม่มีข้อมูล -</td></tr>`;
+      }
+      data.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${escapeHtml(r.customer)}</td><td style="text-align:right">${formatNumber(r.total)}</td>`;
+        tbody.appendChild(tr);
+      });
+      $("homeTotalUser").textContent = formatNumber(total);
+    }
+    
+    function renderHomeAdmin(lao, thai) {
+      // Lao Table
+      const tbodyLao = $("homeTableAdminLao").querySelector("tbody");
+      tbodyLao.innerHTML = "";
+      if (lao.data.length === 0) {
+        tbodyLao.innerHTML = `<tr><td colspan="2" style="text-align:center;color:var(--muted)">- ไม่มีข้อมูล -</td></tr>`;
+      }
+      lao.data.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${escapeHtml(r.user)}</td><td style="text-align:right">${formatNumber(r.total)}</td>`;
+        tbodyLao.appendChild(tr);
+      });
+      $("homeTotalAdminLao").textContent = formatNumber(lao.totalAll);
+
+      // Thai Table
+      const tbodyThai = $("homeTableAdminThai").querySelector("tbody");
+      tbodyThai.innerHTML = "";
+      if (thai.data.length === 0) {
+        tbodyThai.innerHTML = `<tr><td colspan="2" style="text-align:center;color:var(--muted)">- ไม่มีข้อมูล -</td></tr>`;
+      }
+      thai.data.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${escapeHtml(r.user)}</td><td style="text-align:right">${formatNumber(r.total)}</td>`;
+        tbodyThai.appendChild(tr);
+      });
+      $("homeTotalAdminThai").textContent = formatNumber(thai.totalAll);
+    }
+
+    /***********************
+     * Sale: row management, tag, submit, status, stop
+     ***********************/
+    function setTag(tag) {
+      state.currentTag = tag;
+      // style buttons
+      if (tag === "lao") { $("tagLao").classList.add("primary"); $("tagThai").classList.remove("primary"); $("tagThai").classList.add("ghost"); $("tagLao").classList.remove("ghost"); }
+      else { $("tagThai").classList.add("primary"); $("tagLao").classList.remove("primary"); $("tagLao").classList.add("ghost"); $("tagThai").classList.remove("ghost"); }
+      // initialize one row if none
+      if (!document.querySelector("#saleRows .sale-row")) addSaleRow();
+    }
+
+    function addSaleRow() {
+      const container = $("saleRows");
+      const rows = container.querySelectorAll(".sale-row");
+      if (rows.length >= 20) { showModal("ถึงขีดจำกัด", "จำกัดสูงสุด 20 แถวต่อครั้ง"); return; }
+      const idx = rows.length;
+      const div = document.createElement("div");
+      div.className = "sale-row";
+      div.style.display = "flex"; div.style.gap = "8px"; div.style.marginBottom = "8px";
+      div.innerHTML = `
+        <input type="text" class="sale-customer" placeholder="Customer" style="flex:1;padding:8px;border-radius:8px;border:1px solid #e6e9ef">
+        <input type="number" class="sale-number" placeholder="0-999" min="0" max="999" style="width:110px;padding:8px;border-radius:8px;border:1px solid #e6e9ef">
+        <input type="number" class="sale-amount" placeholder="Amount" style="width:130px;padding:8px;border-radius:8px;border:1px solid #e6e9ef">
+        <button class="btn danger remove-row" title="Remove" style="padding: 0 14px; font-weight: bold;">-</button>
+      `;
+      container.appendChild(div);
+      div.querySelector(".remove-row").addEventListener("click", ()=> { div.remove(); });
+      div.querySelector(".sale-customer").focus();
+    }
+
+    function renderSaleRows(items) {
+      const container = $("saleRows");
+      container.innerHTML = "";
+      (items || []).forEach(it => {
+        addSaleRow();
+        const last = container.querySelector(".sale-row:last-child");
+        last.querySelector(".sale-customer").value = it.customer || "";
+        last.querySelector(".sale-number").value = it.number || "";
+        last.querySelector(".sale-amount").value = it.amount || "";
+      });
+      if (!items || items.length === 0) addSaleRow();
+    }
+
+    async function loadStatusAndRenderSale() {
+      // get status
+      const st = await apiGet({ action: "getStatus" }).catch(()=>({ok:false}));
+      const badge = $("statusBadge");
+      const submitBtn = $("btnSaleSubmit");
+      if (st && st.ok && st.isStopped) { 
+        badge.textContent = "Stopped"; badge.style.background = "#fee2e2"; badge.style.color = "#b91c1c";
+        submitBtn.disabled = true;
+      }
+      else { 
+        badge.textContent = "Ready"; badge.style.background = "#eff6ff"; badge.style.color = "#1d4ed8";
+        submitBtn.disabled = false;
+      }
+      // render rows
+      renderSaleRows([]);
+    }
+
+    async function submitSale() {
+      // gather rows
+      const rowsEls = [...document.querySelectorAll(".sale-row")];
+      const items = [];
+      for (const r of rowsEls) {
+        const customer = r.querySelector(".sale-customer").value.trim();
+        const number = r.querySelector(".sale-number").value.trim();
+        const amount = r.querySelector(".sale-amount").value.trim();
+        if (!customer && !number && !amount) continue; // skip empty
+        if (!customer) { showModal("ข้อมูลไม่ครบ", "โปรดกรอกชื่อลูกค้า (Customer)"); r.querySelector(".sale-customer").focus(); return; }
+        
+        // Format number to be 0-999
+        const num = Number(number);
+        if (isNaN(num) || num<0 || num>999 || !Number.isInteger(num)) { 
+          showModal("ข้อมูลไม่ถูกต้อง", "ช่อง Number ต้องเป็นตัวเลขจำนวนเต็ม 0-999 เท่านั้น"); 
+          r.querySelector(".sale-number").focus(); 
+          return; 
+        }
+        // Requirement: 00-999. Handle "0" as "00" if needed.
+        let numStr = String(num);
+        if (numStr.length < 2) {
+          numStr = numStr.padStart(2, '0');
+        }
+        
+        const amt = Number(amount || 0);
+        if (isNaN(amt) || amt < 0) { showModal("ข้อมูลไม่ถูกต้อง", "จำนวนเงิน (Amount) ไม่ถูกต้อง"); r.querySelector(".sale-amount").focus(); return; }
+        items.push({ customer, number: numStr, amount: amt });
+      }
+      if (items.length === 0) { showModal("ไม่มีข้อมูล", "กรุณาเพิ่มข้อมูลอย่างน้อย 1 แถว"); return; }
+      
+      // MODAL: Show summary as per requirement
+      let summaryHtml = items.map(it => `
+        <div class="summary-item">
+          <span>${escapeHtml(it.customer)} (<strong>${it.number}</strong>)</span>
+          <span class="label">${formatNumber(it.amount)}</span>
+        </div>
+      `).join('');
+      let total = items.reduce((sum, it) => sum + it.amount, 0);
+      summaryHtml += `<div class="summary-item" style="font-weight:700; margin-top: 8px;"><span>Total</span><span class="label">${formatNumber(total)}</span></div>`;
+      
+      showModal(`ยืนยันการบันทึก (${state.currentTag.toUpperCase()})`, summaryHtml, [
+        { text: "ยกเลิก", class: "ghost" },
+        { text: "บันทึก", class: "primary", action: () => performSubmit(items) }
+      ]);
+    }
+    
+    async function performSubmit(items) {
+      // check status again
+      const st = await apiGet({ action: "getStatus" }).catch(()=>({ok:false}));
+      if (st && st.ok && st.isStopped) { 
+        // MODAL + REDIRECT as per requirement
+        showModal("ไม่สามารถบันทึกได้", "ไม่สามารถซื้อได้เนื่องจากหมดเวลา", [
+          { text: "ตกลง", class: "primary", action: () => gotoPage("home") }
+        ]);
+        return; 
+      }
+      // build payload
+      const payload = { action: "submitSales", tag: state.currentTag, rows: items, user: state.user.username };
+      // include token optionally
+      if (state.token) payload.authToken = state.token;
+      // post
+      try {
+        const res = await apiPost(payload);
+        if (res && res.ok) {
+          showModal("สำเร็จ", "บันทึกข้อมูลเรียบร้อย", [{text: "ตกลง", class: "success"}]);
+          renderSaleRows([]);
+        } else {
+          showModal("เกิดข้อผิดพลาด", "บันทึกไม่สำเร็จ: " + (res.message || JSON.stringify(res)), [{text: "ตกลง", class: "danger"}]);
+        }
+      } catch (err) {
+        console.error(err); showModal("เกิดข้อผิดพลาด", "เกิดข้อผิดพลาดขณะบันทึก", [{text: "ตกลง", class: "danger"}]);
+      }
+    }
+
+    async function stopSaleConfirm() {
+      // MODAL as per requirement
+      showModal("ยืนยันการหยุดขาย", "คุณต้องการหยุดการขายชั่วคราวใช่หรือไม่?", [
+        { text: "ยกเลิก", class: "danger", action: () => {
+          // Clear form as per requirement
+          renderSaleRows([]);
+        }},
+        { text: "ยืนยัน", class: "primary", action: async () => {
+          const res = await apiPost({ action: "setStatus", isStopped: true, updatedBy: state.user.username, authToken: state.token }).catch(()=>null);
+          if (res && res.ok) { 
+            showModal("สำเร็จ", "หยุดการขายแล้ว", [{text: "ตกลง", class: "success"}]);
+            await loadStatusAndRenderSale(); 
+          }
+          else showModal("ไม่สำเร็จ", (res && res.message ? res.message : "error"), [{text: "ตกลง", class: "danger"}]);
+        }}
+      ]);
+    }
+
+    /***********************
+     * Summary
+     ***********************/
+    async function loadSummary() {
+      const sheet = $("summarySheetSelect").value;
+      if (state.user.role === "admin") {
+        // admin -> getSummary (admin)
+        const res = await apiPost({ action: "getSummary", sheet, authToken: state.token }).catch(()=>null);
+        if (res && res.ok) {
+          renderAdminSummary(res.table1 || [], res.table2 || []);
+        } else {
+          renderAdminSummary([], []);
+        }
+        $("adminSummary").style.display = "block";
+        $("userSummary").style.display = "none";
+      } else {
+        // user view: getData for salelao and saleThai
+        const resL = await apiGet({ action: "getData", sheet: "salelao", username: state.user.username, role: "user" }).catch(()=>null);
+        const resT = await apiGet({ action: "getData", sheet: "saleThai", username: state.user.username, role: "user" }).catch(()=>null);
+        renderUserSummary(resL && resL.data ? resL.data : [], resT && resT.data ? resT.data : [], state.user.discountPercent || 0);
+        $("adminSummary").style.display = "none";
+        $("userSummary").style.display = "block";
+      }
+    }
+
+    function renderAdminSummary(table1, table2) {
+      const t1 = $("summaryTable1").querySelector("tbody");
+      t1.innerHTML = "";
+      if(table1.length === 0) t1.innerHTML = `<tr><td colspan="2" class="muted center">- ไม่มีข้อมูล -</td></tr>`;
+      table1.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${escapeHtml(String(r.number))}</td><td style="text-align:right">${formatNumber(r.totalAmount)}</td>`;
+        t1.appendChild(tr);
+      });
+      const t2 = $("summaryTable2").querySelector("tbody"); t2.innerHTML = "";
+      if(table2.length === 0) t2.innerHTML = `<tr><td colspan="5" class="muted center">- ไม่มีข้อมูล -</td></tr>`;
+      table2.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(r.user)}</td>
+          <td style="text-align:right">${formatNumber(r.sum)}</td>
+          <td style="text-align:right">${formatNumber(r.discountPercent)}%</td>
+          <td style="text-align:right" class="negative">${formatNumber(r.discountAmount)}</td>
+          <td style="text-align:right" class="positive">${formatNumber(r.afterDiscount)}</td>
+        `;
+        t2.appendChild(tr);
+      });
+    }
+
+    function renderUserSummary(laoData, thaiData, discountPercent) {
+      const tL = $("userTableLao").querySelector("tbody");
+      tL.innerHTML = "";
+      if(laoData.length === 0) tL.innerHTML = `<tr><td colspan="2" class="muted center">- ไม่มีข้อมูล -</td></tr>`;
+      laoData.forEach(r => { const tr=document.createElement("tr"); tr.innerHTML=`<td>${escapeHtml(r.customer)}</td><td style="text-align:right">${formatNumber(r.total)}</td>`; tL.appendChild(tr); });
+      
+      const tT = $("userTableThai").querySelector("tbody"); tT.innerHTML = "";
+      if(thaiData.length === 0) tT.innerHTML = `<tr><td colspan="2" class="muted center">- ไม่มีข้อมูล -</td></tr>`;
+      thaiData.forEach(r => { const tr=document.createElement("tr"); tr.innerHTML=`<td>${escapeHtml(r.customer)}</td><td style="text-align:right">${formatNumber(r.total)}</td>`; tT.appendChild(tr); });
+      
+      const sumL = laoData.reduce((s,a)=>s + Number(a.total||0),0);
+      const sumT = thaiData.reduce((s,a)=>s + Number(a.total||0),0);
+      $("userTotalLao").textContent = formatNumber(sumL);
+      $("userTotalThai").textContent = formatNumber(sumT);
+      
+      const raw = sumL + sumT;
+      const discountAmount = raw * (discountPercent/100);
+      const after = raw - discountAmount;
+
+      $("userGrandRaw").textContent = formatNumber(raw);
+      $("userDiscountPercent").textContent = `${discountPercent}`;
+      $("userDiscountAmount").textContent = `-${formatNumber(discountAmount)}`;
+      $("userGrandAfter").textContent = formatNumber(after);
+    }
+
+    /***********************
+     * User Management (admin)
+     ***********************/
+    async function loadUsers() {
+      // fetch users (admin)
+      const res = await apiPost({ action: "getUsers", authToken: state.token }).catch(()=>null);
+      if (res && Array.isArray(res)) {
+        renderUserTable(res);
+      } else {
+         showModal("Error", "ไม่สามารถดึงข้อมูลผู้ใช้ได้ (ตรวจสอบสิทธิ์ admin)", [{text: "ตกลง", class: "danger"}]);
+      }
+    }
+
+    let usersCache = [];
+    function renderUserTable(users) {
+      usersCache = users;
+      const tbody = $("userTable").querySelector("tbody"); tbody.innerHTML = "";
+      if(users.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="muted center">- ไม่มีข้อมูล -</td></tr>`;
+      users.forEach(u => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(u.username)}</td>
+          <td>${escapeHtml(u.password)}</td>
+          <td>${escapeHtml(u.displayName)}</td>
+          <td><span class="badge" style="font-size:12px;">${escapeHtml(u.role)}</span></td>
+          <td style="text-align:right">${formatNumber(u.discountPercent||0)}%</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      renderUserTableFiltered(); // apply search
+    }
+    function renderUserTableFiltered() {
+      const q = $("userSearch").value.trim().toLowerCase();
+      const rows = $("userTable").querySelector("tbody").querySelectorAll("tr");
+      rows.forEach(r => {
+        const username = r.cells[0].textContent.toLowerCase();
+        const displayName = r.cells[2].textContent.toLowerCase();
+        if (q === "" || username.includes(q) || displayName.includes(q)) {
+          r.style.display = "";
+        } else {
+          r.style.display = "none";
+        }
+      });
+    }
+
+    async function addUser() {
+      const username = $("new_username").value.trim();
+      const password = $("new_password").value;
+      const displayName = $("new_displayName").value.trim();
+      const discount = Number($("new_discount").value || 0);
+      if (!username || !password || !displayName) { 
+        showModal("ข้อมูลไม่ครบ", "กรุณากรอกข้อมูลให้ครบ (username, password, displayName)"); return;
+      }
+      
+      // MODAL: Show summary as per requirement
+      const summaryHtml = `
+        <div class="summary-item"><span>Username:</span> <strong>${escapeHtml(username)}</strong></div>
+        <div class="summary-item"><span>Password:</span> <strong>${escapeHtml(password)}</strong></div>
+        <div class="summary-item"><span>Display Name:</span> <strong>${escapeHtml(displayName)}</strong></div>
+        <div class="summary-item"><span>Role:</span> <strong>user</strong></div>
+        <div class="summary-item"><span>Discount:</span> <strong>${discount}%</strong></div>
+      `;
+      
+      showModal("ยืนยันการเพิ่มผู้ใช้", summaryHtml, [
+        { text: "ยกเลิก", class: "ghost" },
+        { text: "ตกลง (Add User)", class: "primary", action: async () => {
+          const res = await apiPost({ 
+            action: "addUser", 
+            username, password, displayName, 
+            discountPercent: discount, 
+            role: "user", // As per requirement
+            authToken: state.token 
+          }).catch(()=>null);
+          
+          if (res && res.ok) { 
+            showModal("สำเร็จ", "เพิ่มผู้ใช้เรียบร้อย", [{text: "ตกลง", class: "success"}]);
+            await loadUsers(); 
+            $("new_username").value=""; $("new_password").value=""; $("new_displayName").value=""; $("new_discount").value="0";
+          }
+          else showModal("ไม่สำเร็จ", (res && res.message ? res.message : "error"), [{text: "ตกลง", class: "danger"}]);
+        }}
+      ]);
+    }
+
+    async function deleteUser() {
+      const username = $("delete_username").value.trim();
+      const msg = $("deleteUserMsg");
+      msg.textContent = "";
+      if (!username) {
+        msg.className = "error"; msg.textContent = "กรุณากรอก username";
+        return;
+      }
+      // check local cache
+      const userExists = usersCache.find(u=>u.username===username);
+      if (!userExists) { 
+        showModal("ไม่พบผู้ใช้", `❗ ไม่มี User ตรงกับข้อมูลนี้ ! (${escapeHtml(username)})`);
+        msg.className = "error"; msg.textContent = "ไม่พบผู้ใช้";
+        return; 
+      }
+      
+      // MODAL: Confirm delete
+      showModal("ยืนยันการลบ", `คุณต้องการลบ User <strong>${escapeHtml(username)}</strong> ใช่หรือไม่?`, [
+        { text: "ยกเลิก", class: "ghost" },
+        { text: "ตกลง (ลบ)", class: "danger", action: async () => {
+          const res = await apiPost({ action: "deleteUser", username, authToken: state.token }).catch(()=>null);
+          if (res && res.ok) { 
+            showModal("สำเร็จ", "ลบผู้ใช้เรียบร้อย", [{text: "ตกลง", class: "success"}]);
+            await loadUsers(); 
+            $("delete_username").value = "";
+          }
+          else showModal("ไม่สำเร็จ", (res && res.message ? res.message : "error"), [{text: "ตกลง", class: "danger"}]);
+        }}
+      ]);
+    }
+
+    /***********************
+     * Clear sheet (admin)
+     ***********************/
+    async function clearSheetConfirm(sheetName) {
+      // MODAL as per requirement
+      showModal(
+        `ยืนยันการลบข้อมูล ${sheetName}`, 
+        `คุณต้องการลบข้อมูลของ <strong>${sheetName}</strong> ทั้งหมด (แถวที่ 2 ลงไป) ใช่หรือไม่? <br><br><strong class="danger">การกระทำนี้ไม่สามารถย้อนกลับได้</strong>`, 
+        [
+          { text: "ยกเลิก", class: "danger" }, // Red X
+          { text: "ตกลง", class: "success", action: async () => { // Green Check
+            const res = await apiPost({ action: "clearSheet", sheet: sheetName, authToken: state.token }).catch(()=>null);
+            if (res && res.ok) { 
+              showModal("สำเร็จ", "ลบข้อมูลเรียบร้อย", [{text: "ตกลง", class: "success"}]);
+              await gotoPage("home"); 
+            }
+            else showModal("ไม่สำเร็จ", (res && res.message ? res.message : "error"), [{text: "ตกลง", class: "danger"}]);
+          }}
+        ]
+      );
+    }
+
+    /***********************
+     * Helpers
+     ***********************/
+    function escapeHtml(s){ if(s===null || s===undefined) return "";
+      return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]); }
+    function formatNumber(n){ if(n===null||n===undefined) return "0"; return Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+
+    // start app
+    init();
+  </script>
 </body>
 </html>
